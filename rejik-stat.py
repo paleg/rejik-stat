@@ -2,7 +2,7 @@
 # Minimun numbers of rows in categoryes
 HITS_ROWS = 5
 # Numbers of rows in user_ip (user_name)
-NAMES_ROWS = 30
+NAMES_ROWS = 28 
 
 USAGE = """
 $ rejik-stat.py -f log_file [-d]
@@ -71,12 +71,14 @@ while True:
       else:
          stats = parse_line(line)
 
+      """ Gather all unique categoryes into list of dictionaryes 
+          categoryes[ { 'category':, 'len': }, ... ]
+      """
       HIT = False
       for i in xrange(0, len(categoryes)):
          if stats['category'] == categoryes[i]['category']:
             HIT = True
             break
-
       if not HIT:
          if len(stats['category']) < HITS_ROWS:
             lenght = HITS_ROWS 
@@ -84,21 +86,26 @@ while True:
             lenght = len(stats['category']) 
          categoryes.append( { 'category': stats['category'], 'len': lenght } )
 
+      """ Gather all unique 'user_ip' 'user_name' pairs into list of dictionaryes 
+          users[ { 'user_ip':, 'user_name': }, ... ]
+      """
       HIT = False
       for i in xrange(0, len(users)):
           if stats['user_ip'] == users[i]['user_ip'] and stats['user_name'] == users[i]['user_name']:
              HIT = True
              break
-
       if not HIT:
          users.append( { 'user_ip': stats['user_ip'], 'user_name': stats['user_name'] } )
 
+      """ Gather hits for all unique pairs 'user_ip' 'user_name' in 'category' into list of dictionaryes
+          db[ { 'user_ip':, 'user_name', 'category', 'hits' }, ... ]
+      """
       HIT = False
-
       for i in xrange(0, len(db)):
           if (stats['user_ip'] == db[i]['user_ip']) and (stats['user_name'] == db[i]['user_name']) and (stats['category'] == db[i]['category']):
              HIT = True
              break
+      # if 'user_ip'&'user_name' in 'category' is already in db - increment hits, else - add new entry
       if HIT:
          db[i]['hits'] += 1
       else:
@@ -106,20 +113,24 @@ while True:
 
 fh.close()
 
+# Print title (ips)
 field = 'IP (UserName)'
 print field.ljust(NAMES_ROWS),
 
+# Print title (categoryes)
 for i in xrange(len(categoryes)):
     print categoryes[i]['category'].center(int(categoryes[i]['len'])),
 print
 
 for i in xrange(0, len(users)):
+    # Print report by users
     if users[i]['user_name'] == '-':
        field = '%s'%(users[i]['user_ip'])
     else:
        field = str('%s (%s)'%(users[i]['user_ip'], users[i]['user_name']))
     print field.ljust(NAMES_ROWS),
 
+    # Print hists to 'category' for 'user_ip'&'user_name'
     for j in xrange(len(categoryes)):
         hits = str(get_user_category_hits(db, users[i]['user_ip'], users[i]['user_name'], categoryes[j]['category']))
         print hits.center(categoryes[j]['len']),
