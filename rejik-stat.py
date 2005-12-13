@@ -6,7 +6,7 @@ NAMES_ROWS = 28
 
 USAGE = """$ rejik-stat.py [-h] -f log_file [-d] [--strip-domain] [-c <categories>] [-u <users>]
 rejik-stat (Get info in human-readable format from rejik log) by Oleg Palij <xmpp://malik@jabber.te.ua>
-Example: ./rejik-stat.py --strip-domain -c PORNO,CHAT,IP -u o.palij,10.6.44.38 -f redirector.log
+Example: ./rejik-stat.py --strip-domain -c PORNO,CHAT,IP -u o.palij,10.6.44.38 -f redirector.log -s IP,vv.palij,10.6.100.2
 """
 
 # Main data store - dictionary  { 'user_ip':, 'user_name':, 'category':, 'hits': }. 'hits' - number of hits to 'category' by 'user_name' from 'user_ip'
@@ -53,6 +53,8 @@ parser.add_option("-u", dest="USERS", type="string",
                      help="To show only that categories that comma-separated list includes")
 parser.add_option("-c", dest="CATEGORIES", type="string",
                      help="To show only that users that comma-separated list includes")
+parser.add_option("-s", dest="SKIP", type="string",
+                     help="To does not show users or categories that comma-separated list includes")
 parser.add_option("--strip-domains",
                      action="store_true", dest="STRIP_DOMAINS", default=False,
                      help="strip domain part in user name")
@@ -70,14 +72,20 @@ except:
    exit(1)
 
 try:
-   options.CATEGORIES = options.CATEGORIES.strip(',')
+   options.CATEGORIES = options.CATEGORIES.split(',')
 except:
    options.CATEGORIES = [] 
 
 try:
-   options.USERS = options.USERS.strip(',')
+   options.USERS = options.USERS.split(',')
 except:
    options.USERS = []
+
+try:
+   options.SKIP = options.SKIP.split(',')
+except:
+   options.SKIP = []
+
 
 if options.STRIP_DOMAINS:
    import re
@@ -92,7 +100,7 @@ while True:
       """ Gather all unique categories into list of dictionaryes 
           categories[ { 'category':, 'len': }, ... ]
       """
-      if (stats['category'] in options.CATEGORIES) or (options.CATEGORIES == []):
+      if (((stats['category'] in options.CATEGORIES) or (options.CATEGORIES == [])) and (stats['category'] not in options.SKIP)):
          HIT = False
          for i in xrange(0, len(categories)):
             if stats['category'] == categories[i]['category']:
@@ -108,7 +116,7 @@ while True:
       """ Gather all unique 'user_ip' 'user_name' pairs into list of dictionaryes 
           users[ { 'user_ip':, 'user_name': }, ... ]
       """
-      if (stats['user_ip'] in options.USERS) or (stats['user_name'] in options.USERS) or (options.USERS == []):
+      if (((stats['user_ip'] in options.USERS) or (stats['user_name'] in options.USERS) or (options.USERS == [])) and (stats['user_ip'] not in options.SKIP) and (stats['user_name'] not in options.SKIP)):
          HIT = False
          for i in xrange(0, len(users)):
              if stats['user_ip'] == users[i]['user_ip'] and stats['user_name'] == users[i]['user_name']:
@@ -120,7 +128,7 @@ while True:
       """ Gather hits for all unique pairs 'user_ip' 'user_name' in 'category' into list of dictionaryes
           db[ { 'user_ip':, 'user_name', 'category', 'hits' }, ... ]
       """
-      if ((stats['user_ip'] in options.USERS) or (stats['user_name'] in options.USERS) or (options.USERS == [])) and ((stats['category'] in options.CATEGORIES) or (options.CATEGORIES == [])):
+      if (((stats['user_ip'] in options.USERS) or (stats['user_name'] in options.USERS) or (options.USERS == [])) and ((stats['category'] in options.CATEGORIES) or (options.CATEGORIES == [])) and ((stats['user_ip'] not in options.SKIP) and (stats['user_name'] not in options.SKIP) and (stats['category'] not in options.SKIP))):
          HIT = False
          for i in xrange(0, len(db)):
              if (stats['user_ip'] == db[i]['user_ip']) and (stats['user_name'] == db[i]['user_name']) and (stats['category'] == db[i]['category']):
