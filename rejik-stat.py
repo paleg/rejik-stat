@@ -97,7 +97,7 @@ while True:
       else:
          stats = parse_line(line)
 
-      """ Gather all unique categories into list of dictionaryes 
+      """ Gather all unique categories into list of dictionaries 
           categories[ { 'category':, 'len': }, ... ]
       """
       if (((stats['category'] in options.CATEGORIES) or (options.CATEGORIES == [])) and (stats['category'] not in options.SKIP)):
@@ -113,7 +113,7 @@ while True:
                lenght = len(stats['category']) 
             categories.append( { 'category': stats['category'], 'len': lenght } )
 
-      """ Gather all unique 'user_ip' 'user_name' pairs into list of dictionaryes 
+      """ Gather all unique 'user_ip' 'user_name' pairs into list of dictionaries 
           users[ { 'user_ip':, 'user_name': }, ... ]
       """
       if (((stats['user_ip'] in options.USERS) or (stats['user_name'] in options.USERS) or (options.USERS == [])) and (stats['user_ip'] not in options.SKIP) and (stats['user_name'] not in options.SKIP)):
@@ -125,7 +125,7 @@ while True:
          if not HIT:
             users.append( { 'user_ip': stats['user_ip'], 'user_name': stats['user_name'] } )
 
-      """ Gather hits for all unique pairs 'user_ip' 'user_name' in 'category' into list of dictionaryes
+      """ Gather hits for all unique pairs 'user_ip' 'user_name' in 'category' into list of dictionaries
           db[ { 'user_ip':, 'user_name', 'category', 'hits' }, ... ]
       """
       if (((stats['user_ip'] in options.USERS) or (stats['user_name'] in options.USERS) or (options.USERS == [])) and ((stats['category'] in options.CATEGORIES) or (options.CATEGORIES == [])) and ((stats['user_ip'] not in options.SKIP) and (stats['user_name'] not in options.SKIP) and (stats['category'] not in options.SKIP))):
