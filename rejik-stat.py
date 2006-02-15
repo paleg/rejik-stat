@@ -1,8 +1,11 @@
 #!/usr/local/bin/python
+# -*- coding: koi8-u -*-
 # Minimun numbers of rows in categories
 HITS_ROWS = 5
 # Numbers of rows in user_ip (user_name)
 NAMES_ROWS = 28 
+# 
+HITS_HIGHLIGHT = 500
 
 USAGE = """$ rejik-stat.py [-h] -f log_file [-d] [--strip-domain] [-c <categories>] [-u <users>]
 rejik-stat (Get info in human-readable format from rejik log) by Oleg Palij <xmpp://malik@jabber.te.ua>
@@ -58,6 +61,9 @@ parser.add_option("-s", dest="SKIP", type="string",
 parser.add_option("--strip-domains",
                      action="store_true", dest="STRIP_DOMAINS", default=False,
                      help="strip domain part in user name")
+parser.add_option("--html",
+                     action="store_true", dest="HTML_OUTPUT", default=False,
+                     help="Show result as HTML instead of plain text")
 
 (options, args) = parser.parse_args()
 
@@ -144,12 +150,45 @@ fh.close()
 
 # Print title (ips)
 field = 'IP (UserName)'
-print field.ljust(NAMES_ROWS),
+if not options.HTML_OUTPUT:
+   print field.ljust(NAMES_ROWS),
+else:
+   print """
+<HTML>
+ <HEAD>
+  <TITLE>
+   Rejik Stats.
+  </TITLE>
+ </HEAD>
+ <BODY BGCOLOR="#DCDCDC">
+  <TABLE BORDER=0 ALIGN=CENTER WIDTH=40%%>
+   <TR>
+    <TD ALIGN=CENTER VALIGN=BOTTOM>
+     TOP
+    </TD>
+   </TR>
+   <TR>
+    <TD>
+     <TABLE BORDER=1 ALIGN=CENTER WIDTH=100%%>
+      <tr>
+       <td>
+        <div STYLE="color: #000080">%s</div>
+       </td>
+            """%(field)
 
 # Print title (categories)
 for i in xrange(len(categories)):
-    print categories[i]['category'].center(int(categories[i]['len'])),
-print
+    if not options.HTML_OUTPUT:
+       print categories[i]['category'].center(int(categories[i]['len'])),
+    else:
+       print """<td ALIGN=CENTER>
+                 <div STYLE="color: #000080">%s</div>
+                </td>"""%(categories[i]['category'].center(int(categories[i]['len'])))
+if not options.HTML_OUTPUT:
+   print
+else:
+   print """</tr>
+            <tr>"""
 
 for i in xrange(0, len(users)):
     # Print report by users
@@ -157,13 +196,37 @@ for i in xrange(0, len(users)):
        field = '%s'%(users[i]['user_ip'])
     else:
        field = str('%s (%s)'%(users[i]['user_ip'], users[i]['user_name']))
-    print field.ljust(NAMES_ROWS),
+    if not options.HTML_OUTPUT:
+       print field.ljust(NAMES_ROWS),
+    else:
+       print """<td>
+                 %s
+                </td>"""%(field)
 
     # Print hists to 'category' for 'user_ip'&'user_name'
     for j in xrange(len(categories)):
-        hits = str(get_user_category_hits(db, users[i]['user_ip'], users[i]['user_name'], categories[j]['category']))
-        print hits.center(categories[j]['len']),
-    print 
+        hits = get_user_category_hits(db, users[i]['user_ip'], users[i]['user_name'], categories[j]['category'])
+        if not options.HTML_OUTPUT:
+           print str(hits).center(categories[j]['len']),
+        else:
+           if hits > HITS_HIGHLIGHT:
+              hits = """<div STYLE="color: red">%s</div>"""%(hits)
+           print """<td ALIGN=CENTER>
+                     %s
+                    </td>"""%(hits)
+    if not options.HTML_OUTPUT:
+       print
+    else:
+       print """</tr>"""
 
-print
+if not options.HTML_OUTPUT:
+   print
+else:
+   print """</TABLE>
+ </TD>
+</TR>
+</TABLE>
+ </BODY>
+</HTML>"""
+
 exit(0)
