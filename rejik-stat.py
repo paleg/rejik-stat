@@ -50,9 +50,9 @@ parser.add_option("-d", "--debug",
                      action="store_true", dest="DEBUG", default=False,
                      help="go into debug mode")
 parser.add_option("-u", dest="USERS", type="string",
-                     help="To show only that categories that comma-separated list includes")
-parser.add_option("-c", dest="CATEGORIES", type="string",
                      help="To show only that users that comma-separated list includes")
+parser.add_option("-c", dest="CATEGORIES", type="string",
+                     help="To show only that categories that comma-separated list includes")
 parser.add_option("-s", dest="SKIP", type="string",
                      help="To does not show users or categories that comma-separated list includes")
 parser.add_option("--strip-domains",
