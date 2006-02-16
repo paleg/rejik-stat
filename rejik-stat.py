@@ -1,5 +1,4 @@
 #!/usr/local/bin/python
-# -*- coding: koi8-u -*-
 # Minimun numbers of rows in categories (plain text view)
 HITS_ROWS = 5
 # Numbers of rows in user_ip (user_name) (plain text view)
@@ -209,8 +208,7 @@ for i in xrange(0, len(users)):
        print
     else:
        print """
-      </tr>
-            """,
+      </tr>""",
 
 if not options.HTML_OUTPUT:
    print
