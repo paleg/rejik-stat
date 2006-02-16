@@ -12,7 +12,7 @@ Example: ./rejik-stat.py --strip-domain -c PORNO,CHAT,IP -u o.palij,10.6.44.38 -
 
 # Main data store - dictionary  { 'user_ip':, 'user_name':, 'category':, 'hits': }. 'hits' - number of hits to 'category' by 'user_name' from 'user_ip'
 db = []
-# data store for categories - dictionary  { 'category': , 'len': }. 'len' - number of rows ranked by 'category' 
+# data store for categories - dictionary  { 'category': , 'len': }. 'len' - number of rows ranked by 'category' (for plain text view)
 categories = []
 # data store for users - dictionary { 'user_ip': , 'user_name': }
 users = []
@@ -158,7 +158,7 @@ else:
   </TITLE>
  </HEAD>
  <BODY BGCOLOR="#DCDCDC">
-  <TABLE BORDER=1 ALIGN=CENTER WIDTH=50%%>
+  <TABLE BORDER=1 ALIGN=CENTER WIDTH=70%%>
       <tr>
          <td>
            <div STYLE="color: #000080">%s</div>
