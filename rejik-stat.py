@@ -158,7 +158,7 @@ else:
   </TITLE>
  </HEAD>
  <BODY BGCOLOR="#DCDCDC">
-     <TABLE BORDER=1 ALIGN=CENTER WIDTH=50%%>
+  <TABLE BORDER=1 ALIGN=CENTER WIDTH=50%%>
       <tr>
          <td>
            <div STYLE="color: #000080">%s</div>
