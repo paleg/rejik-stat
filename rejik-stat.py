@@ -66,7 +66,7 @@ parser.add_option("--html",
 (options, args) = parser.parse_args()
 
 if options.log_file == None:
-   print USAGE
+   print USAGE 
    exit(1)
 
 try:
@@ -105,12 +105,10 @@ while True:
           categories[ { 'category':, 'len': }, ... ]
       """
       if (((stats['category'] in options.CATEGORIES) or (options.CATEGORIES == [])) and (stats['category'] not in options.SKIP)):
-         HIT = False
          for i in xrange(0, len(categories)):
             if stats['category'] == categories[i]['category']:
-               HIT = True
                break
-         if not HIT:
+         else:
             if len(stats['category']) < HITS_ROWS:
                lenght = HITS_ROWS 
             else:
@@ -121,26 +119,21 @@ while True:
           users[ { 'user_ip':, 'user_name': }, ... ]
       """
       if (((stats['user_ip'] in options.USERS) or (stats['user_name'] in options.USERS) or (options.USERS == [])) and (stats['user_ip'] not in options.SKIP) and (stats['user_name'].lower() not in options.SKIP)):
-         HIT = False
          for i in xrange(0, len(users)):
              if stats['user_ip'] == users[i]['user_ip'] and stats['user_name'] == users[i]['user_name']:
-                HIT = True
                 break
-         if not HIT:
+         else:
             users.append( { 'user_ip': stats['user_ip'], 'user_name': stats['user_name'] } )
 
       """ Gather hits for all unique pairs 'user_ip' 'user_name' in 'category' into list of dictionaries
           db[ { 'user_ip':, 'user_name', 'category', 'hits' }, ... ]
       """
       if (((stats['user_ip'] in options.USERS) or (stats['user_name'].lower() in options.USERS) or (options.USERS == [])) and ((stats['category'] in options.CATEGORIES) or (options.CATEGORIES == [])) and ((stats['user_ip'] not in options.SKIP) and (stats['user_name'].lower() not in options.SKIP) and (stats['category'] not in options.SKIP))):
-         HIT = False
          for i in xrange(0, len(db)):
              if (stats['user_ip'] == db[i]['user_ip']) and (stats['user_name'] == db[i]['user_name']) and (stats['category'] == db[i]['category']):
-                HIT = True
+                db[i]['hits'] += 1
                 break
          # if 'user_ip'&'user_name' in 'category' is already in db - increment hits, else - add new entry
-         if HIT:
-            db[i]['hits'] += 1
          else:
             db.append( { 'user_ip': stats['user_ip'], 'user_name':stats['user_name'], 'category': stats['category'], 'hits': 1 } )
 
