@@ -7,7 +7,7 @@ NAMES_ROWS = 28
 HITS_HIGHLIGHT = 300
 
 USAGE = """$ rejik-stat.py [-h] -f log_file [-d] [--strip-domain] [-c <categories>] [-u <users>]
-rejik-stat (Get info in human-readable format from rejik log) by Oleg Palij <xmpp://malik@jabber.te.ua>
+rejik-stat (Get info in human-readable format from rejik log) by Oleg Palij (mailto,xmpp:o.palij@gmail.com)
 Example: ./rejik-stat.py --strip-domain -c PORNO,CHAT,IP -u o.palij,10.6.44.38 -f redirector.log -s IP,vv.palij,10.6.100.2 --html > rejik-stats.html"""
 
 # Main data store - dictionary  { 'user_ip':, 'user_name':, 'category':, 'hits': }. 'hits' - number of hits to 'category' by 'user_name' from 'user_ip'
