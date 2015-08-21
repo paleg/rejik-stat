@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 # Minimun numbers of rows in categories (plain text view)
 HITS_ROWS = 5
 # Numbers of rows in user_ip (user_name) (plain text view)
@@ -66,7 +66,7 @@ parser.add_option("--html",
 (options, args) = parser.parse_args()
 
 if options.log_file == None:
-   print USAGE 
+   print USAGE
    exit(1)
 
 try:
