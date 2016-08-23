@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import re
 from optparse import OptionParser
 from sys import stderr, exit
 
@@ -20,8 +19,6 @@ db = {}
 # data store for categories - dictionary['category'] = 'len'. 'len' - number of rows ranked by 'category' (for plain text view)
 categories = {}
 
-domain_re = re.compile(r'^(?P<prefix>.*\\)?(?P<login>[^\\@]*)(?P<suffix>@.*)?$')
-
 def parse_line(line):
     """ Parse one line, return dictionary of 'category', 'user_ip', 'user_name' """
     try:
@@ -31,9 +28,13 @@ def parse_line(line):
        user_ip = line[3]
        user_name = line[4]
        if options.STRIP_DOMAINS:
-          match = domain_re.search(user_name)
-          if match:
-             user_name = match.group('login')
+          indx = user_name.find("@")
+          if indx != -1:
+             user_name = user_name[:indx]
+          else:
+             indx = user_name.find("\\")
+             if indx != -1:
+                user_name = user_name[indx+1:]
     except Exception as ex:
        print 'Sorry, it is possible, that log file contain errors: {}'.format(ex)
     else:
