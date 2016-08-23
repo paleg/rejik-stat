@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 from optparse import OptionParser
-from sys import stderr, exit
+import sys
+import io
 
 # Minimun numbers of rows in categories (plain text view)
 HITS_ROWS = 5
@@ -36,7 +38,7 @@ def parse_line(line):
              if indx != -1:
                 user_name = user_name[indx+1:]
     except Exception as ex:
-       print 'Sorry, it is possible, that log file contain errors: {}'.format(ex)
+       print('Sorry, it is possible, that log file contain errors: {}'.format(ex))
     else:
        return { 'category': category, 'user_ip': user_ip, 'user_name': user_name.lower() }
 
@@ -62,8 +64,8 @@ parser.add_option("--html",
 (options, args) = parser.parse_args()
 
 if options.log_file == None:
-   print USAGE
-   exit(1)
+   print(USAGE)
+   sys.exit(1)
 
 try:
    options.CATEGORIES = options.CATEGORIES.split(',')
@@ -81,10 +83,10 @@ except:
    options.SKIP = []
 
 try:
-   fh = open(options.log_file)
+   fh = io.open(options.log_file, "tr", errors='replace')
 except EnvironmentError as ex:
-   print >> stderr, 'Problems while opening rejik log file {}: {}'.format(options.log_file, ex)
-   exit(1)
+   print('Problems while opening rejik log file {}: {}'.format(options.log_file, ex), file=sys.stderr)
+   sys.exit(1)
 else:
    with fh:
       for line in fh:
@@ -98,7 +100,7 @@ else:
 
             if stats['category'] not in categories:
                length = HITS_ROWS if len(stats['category']) < HITS_ROWS else len(stats['category'])
-               categories[ stats['category'] ] = length
+               categories[ stats['category'] ] = length + 1
 
             if stats['user_name'] != '-':
                key = "{} ({})".format(stats['user_ip'], stats['user_name'])
@@ -117,69 +119,69 @@ else:
 # Print title (ips)
 field = 'IP (UserName)'
 if not options.HTML_OUTPUT:
-   print field.ljust(NAMES_ROWS),
+   print(field.ljust(NAMES_ROWS), end='')
 else:
-   print """<HTML>
+   print("""<HTML>
  <HEAD>
   <TITLE>
    Rejik Stats
   </TITLE>
  </HEAD>
  <BODY BGCOLOR="#DCDCDC">
-  <TABLE BORDER=1 ALIGN=CENTER WIDTH=70%%>
+  <TABLE BORDER=1 ALIGN=CENTER WIDTH=70%>
       <tr>
          <td>
-           <div STYLE="color: #000080">%s</div>
-         </td>"""%(field),
+           <div STYLE="color: #000080">{}</div>
+         </td>""".format(field), end='')
 
 # Print title (categories)
 for category, length in sorted(categories.items()):
     if not options.HTML_OUTPUT:
-       print category.center(length),
+       print(category.center(length), end='')
     else:
-       print """
+       print("""
          <td ALIGN=CENTER>
-           <div STYLE="color: #000080">%s</div>
-         </td>"""%(category.center(length)),
+           <div STYLE="color: #000080">{}</div>
+         </td>""".format(category.center(length)), end='')
 
 if not options.HTML_OUTPUT:
-   print
+   print()
 else:
-   print """
-      </tr>""",
+   print("""
+      </tr>""", end='')
 
 for user, props in db.items():
     if options.HTML_OUTPUT:
-       print """ 
-      <tr>""",
+       print("""
+      <tr>""", end='')
     # Print report by users
     if not options.HTML_OUTPUT:
-       print user.ljust(NAMES_ROWS),
+       print(user.ljust(NAMES_ROWS), end='')
     else:
-       print """
-         <td>%s</td>"""%(user),
+       print("""
+         <td>{}</td>""".format(user), end='')
 
     # Print hists to 'category' for 'user_ip'&'user_name'
     for category, length in sorted(categories.items()):
         hits = props[category] if category in props else 0
         if not options.HTML_OUTPUT:
-           print str(hits).center(length),
+           print(str(hits).center(length), end='')
         else:
            if hits > HITS_HIGHLIGHT:
-              hits = """<div STYLE="color: red">%s</div>"""%(hits)
-           print """<td ALIGN=CENTER>%s</td>"""%(hits),
+              hits = """<div STYLE="color: red">{}</div>""".format(hits)
+           print("""<td ALIGN=CENTER>{}</td>""".format(hits), end='')
     if not options.HTML_OUTPUT:
-       print
+       print()
     else:
-       print """
-      </tr>""",
+       print("""
+      </tr>""", end='')
 
 if not options.HTML_OUTPUT:
-   print
+   print()
 else:
-   print """
+   print("""
   </TABLE>
  </BODY>
-</HTML>"""
+</HTML>""")
 
-exit(0)
+sys.exit(0)
