@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from optparse import OptionParser
+import optparse
 import sys
 import io
+import socket
 
 # Minimun numbers of rows in categories (plain text view)
 HITS_ROWS = 5
@@ -11,6 +12,13 @@ HITS_ROWS = 5
 NAMES_ROWS = 35
 # Highlight hits which > then HITS_HIGHLIGHT (html view)
 HITS_HIGHLIGHT = 300
+# valid sort options
+SORTBY_AVAIL = ["hits", "ip"]
+
+def sortby_check(option, opt, value, parser):
+   if value not in SORTBY_AVAIL:
+      raise optparse.OptionValueError("'{}' is invalid value for 'sortby'. Valid values is {}.".format(value, SORTBY_AVAIL))
+   setattr(parser.values, option.dest, value)
 
 USAGE = """$ rejik-stat.py [-h] -f log_file [-d] [--strip-domain] [-c <categories>] [-u <users>]
 rejik-stat (Get info in human-readable format from rejik log) by Oleg Palij (mailto,xmpp:o.palij@gmail.com)
@@ -42,7 +50,7 @@ def parse_line(line):
     else:
        return { 'category': category, 'user_ip': user_ip, 'user_name': user_name.lower() }
 
-parser = OptionParser(usage=USAGE)
+parser = optparse.OptionParser(usage=USAGE)
 parser.add_option("-f", dest="log_file",
                      help="rejik log file name")
 parser.add_option("-d", "--debug",
@@ -60,6 +68,9 @@ parser.add_option("--strip-domains",
 parser.add_option("--html",
                      action="store_true", dest="HTML_OUTPUT", default=False,
                      help="Show result as HTML instead of plain text")
+parser.add_option("--sortby",
+                     action="callback", callback=sortby_check, type="string", dest="SORTBY", default="hits",
+                     help="Sort result table: hits, users [default: %default]")
 
 (options, args) = parser.parse_args()
 
@@ -100,7 +111,7 @@ else:
 
             if stats['category'] not in categories:
                length = HITS_ROWS if len(stats['category']) < HITS_ROWS else len(stats['category'])
-               categories[ stats['category'] ] = length + 1
+               categories[ stats['category'] ] = length + 2
 
             if stats['user_name'] != '-':
                key = "{} ({})".format(stats['user_ip'], stats['user_name'])
@@ -150,7 +161,11 @@ else:
    print("""
       </tr>""", end='')
 
-for user, props in db.items():
+sortby = lambda item: -sum(item[1].values())
+if options.SORTBY == "ip":
+    sortby = lambda item: socket.inet_aton(item[0].split()[0])
+
+for user, props in sorted(db.items(), key=sortby):
     if options.HTML_OUTPUT:
        print("""
       <tr>""", end='')
