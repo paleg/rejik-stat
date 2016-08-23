@@ -1,8 +1,13 @@
 #!/usr/bin/env python
+
+import re
+from optparse import OptionParser
+from sys import stderr, exit
+
 # Minimun numbers of rows in categories (plain text view)
 HITS_ROWS = 5
-# Numbers of rows in user_ip (user_name) (plain text view)
-NAMES_ROWS = 28 
+# Minimum numbers of rows in user_ip (user_name) (plain text view)
+NAMES_ROWS = 35
 # Highlight hits which > then HITS_HIGHLIGHT (html view)
 HITS_HIGHLIGHT = 300
 
@@ -10,12 +15,12 @@ USAGE = """$ rejik-stat.py [-h] -f log_file [-d] [--strip-domain] [-c <categorie
 rejik-stat (Get info in human-readable format from rejik log) by Oleg Palij (mailto,xmpp:o.palij@gmail.com)
 Example: ./rejik-stat.py --strip-domain -c PORNO,CHAT,IP -u o.palij,10.6.44.38 -f redirector.log -s IP,vv.palij,10.6.100.2 --html > rejik-stats.html"""
 
-# Main data store - dictionary  { 'user_ip':, 'user_name':, 'category':, 'hits': }. 'hits' - number of hits to 'category' by 'user_name' from 'user_ip'
-db = []
-# data store for categories - dictionary  { 'category': , 'len': }. 'len' - number of rows ranked by 'category' (for plain text view)
-categories = []
-# data store for users - dictionary { 'user_ip': , 'user_name': }
-users = []
+# Main data store - dictionary['user_ip (user_name)'] = { 'category': 'hits', ... }. 'hits' - number of hits to 'category' by 'user_name' from 'user_ip'
+db = {}
+# data store for categories - dictionary['category'] = 'len'. 'len' - number of rows ranked by 'category' (for plain text view)
+categories = {}
+
+domain_re = re.compile(r'^(?P<prefix>.*\\)?(?P<login>[^\\@]*)(?P<suffix>@.*)?$')
 
 def parse_line(line):
     """ Parse one line, return dictionary of 'category', 'user_ip', 'user_name' """
@@ -26,23 +31,13 @@ def parse_line(line):
        user_ip = line[3]
        user_name = line[4]
        if options.STRIP_DOMAINS:
-          match = re.search(r'\\',user_name)
+          match = domain_re.search(user_name)
           if match:
-             user_name = user_name[match.end():]
-    except:
-       print 'Sorry, it is possible, that log file contain errors.'
+             user_name = match.group('login')
+    except Exception as ex:
+       print 'Sorry, it is possible, that log file contain errors: {}'.format(ex)
     else:
-       return { 'category': category, 'user_ip': user_ip, 'user_name': user_name }
-
-def get_user_category_hits(db, user_ip, user_name, category):
-    """ Return 'user_name' from 'user_ip' 'hits' in 'category' from 'db', otherwise return 0 """
-    for i in xrange(0, len(db)):
-        if (user_ip == db[i]['user_ip']) and (user_name == db[i]['user_name']) and(category == db[i]['category']):
-           return db[i]['hits']
-    return 0
-
-from optparse import OptionParser
-from sys import stderr, exit
+       return { 'category': category, 'user_ip': user_ip, 'user_name': user_name.lower() }
 
 parser = OptionParser(usage=USAGE)
 parser.add_option("-f", dest="log_file",
@@ -70,12 +65,6 @@ if options.log_file == None:
    exit(1)
 
 try:
-   fh = open(options.log_file)
-except:
-   print >> stderr, 'Problems while opening rejik log file %s'%(options.log_file)
-   exit(1)
-
-try:
    options.CATEGORIES = options.CATEGORIES.split(',')
 except:
    options.CATEGORIES = [] 
@@ -90,54 +79,39 @@ try:
 except:
    options.SKIP = []
 
-
-if options.STRIP_DOMAINS:
-   import re
-
-while True:
-      line = fh.readline()
-      if line == '':
-         break
-      else:
+try:
+   fh = open(options.log_file)
+except EnvironmentError as ex:
+   print >> stderr, 'Problems while opening rejik log file {}: {}'.format(options.log_file, ex)
+   exit(1)
+else:
+   with fh:
+      for line in fh:
          stats = parse_line(line)
 
-      """ Gather all unique categories into list of dictionaries 
-          categories[ { 'category':, 'len': }, ... ]
-      """
-      if (((stats['category'] in options.CATEGORIES) or (options.CATEGORIES == [])) and (stats['category'] not in options.SKIP)):
-         for i in xrange(0, len(categories)):
-            if stats['category'] == categories[i]['category']:
-               break
-         else:
-            if len(stats['category']) < HITS_ROWS:
-               lenght = HITS_ROWS 
+         if ((stats['user_ip'] in options.USERS) or (stats['user_name'] in options.USERS) or (options.USERS == [])) and \
+            ((stats['category'] in options.CATEGORIES) or (options.CATEGORIES == [])) and \
+            ((stats['user_ip'] not in options.SKIP) and \
+             (stats['user_name'] not in options.SKIP) and \
+             (stats['category'] not in options.SKIP)):
+
+            if stats['category'] not in categories:
+               length = HITS_ROWS if len(stats['category']) < HITS_ROWS else len(stats['category'])
+               categories[ stats['category'] ] = length
+
+            if stats['user_name'] != '-':
+               key = "{} ({})".format(stats['user_ip'], stats['user_name'])
             else:
-               lenght = len(stats['category']) 
-            categories.append( { 'category': stats['category'], 'len': lenght } )
+               key = stats['user_ip']
+            if key not in db:
+               db[key] = {}
+            if stats['category'] not in db[key]:
+               db[key][ stats['category'] ] = 1
+            else:
+               db[key][ stats['category'] ] += 1
 
-      """ Gather all unique 'user_ip' 'user_name' pairs into list of dictionaries 
-          users[ { 'user_ip':, 'user_name': }, ... ]
-      """
-      if (((stats['user_ip'] in options.USERS) or (stats['user_name'] in options.USERS) or (options.USERS == [])) and (stats['user_ip'] not in options.SKIP) and (stats['user_name'].lower() not in options.SKIP)):
-         for i in xrange(0, len(users)):
-             if stats['user_ip'] == users[i]['user_ip'] and stats['user_name'] == users[i]['user_name']:
-                break
-         else:
-            users.append( { 'user_ip': stats['user_ip'], 'user_name': stats['user_name'] } )
-
-      """ Gather hits for all unique pairs 'user_ip' 'user_name' in 'category' into list of dictionaries
-          db[ { 'user_ip':, 'user_name', 'category', 'hits' }, ... ]
-      """
-      if (((stats['user_ip'] in options.USERS) or (stats['user_name'].lower() in options.USERS) or (options.USERS == [])) and ((stats['category'] in options.CATEGORIES) or (options.CATEGORIES == [])) and ((stats['user_ip'] not in options.SKIP) and (stats['user_name'].lower() not in options.SKIP) and (stats['category'] not in options.SKIP))):
-         for i in xrange(0, len(db)):
-             if (stats['user_ip'] == db[i]['user_ip']) and (stats['user_name'] == db[i]['user_name']) and (stats['category'] == db[i]['category']):
-                db[i]['hits'] += 1
-                break
-         # if 'user_ip'&'user_name' in 'category' is already in db - increment hits, else - add new entry
-         else:
-            db.append( { 'user_ip': stats['user_ip'], 'user_name':stats['user_name'], 'category': stats['category'], 'hits': 1 } )
-
-fh.close()
+            if len(key) > NAMES_ROWS:
+               NAMES_ROWS = len(key)
 
 # Print title (ips)
 field = 'IP (UserName)'
@@ -158,14 +132,14 @@ else:
          </td>"""%(field),
 
 # Print title (categories)
-for i in xrange(len(categories)):
+for category, length in sorted(categories.items()):
     if not options.HTML_OUTPUT:
-       print categories[i]['category'].center(int(categories[i]['len'])),
+       print category.center(length),
     else:
        print """
          <td ALIGN=CENTER>
            <div STYLE="color: #000080">%s</div>
-         </td>"""%(categories[i]['category'].center(int(categories[i]['len']))),
+         </td>"""%(category.center(length)),
 
 if not options.HTML_OUTPUT:
    print
@@ -173,26 +147,22 @@ else:
    print """
       </tr>""",
 
-for i in xrange(0, len(users)):
+for user, props in db.items():
     if options.HTML_OUTPUT:
        print """ 
       <tr>""",
     # Print report by users
-    if users[i]['user_name'] == '-':
-       field = '%s'%(users[i]['user_ip'])
-    else:
-       field = str('%s (%s)'%(users[i]['user_ip'], users[i]['user_name']))
     if not options.HTML_OUTPUT:
-       print field.ljust(NAMES_ROWS),
+       print user.ljust(NAMES_ROWS),
     else:
        print """
-         <td>%s</td>"""%(field),
+         <td>%s</td>"""%(user),
 
     # Print hists to 'category' for 'user_ip'&'user_name'
-    for j in xrange(len(categories)):
-        hits = get_user_category_hits(db, users[i]['user_ip'], users[i]['user_name'], categories[j]['category'])
+    for category, length in sorted(categories.items()):
+        hits = props[category] if category in props else 0
         if not options.HTML_OUTPUT:
-           print str(hits).center(categories[j]['len']),
+           print str(hits).center(length),
         else:
            if hits > HITS_HIGHLIGHT:
               hits = """<div STYLE="color: red">%s</div>"""%(hits)
